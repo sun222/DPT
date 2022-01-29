@@ -15,6 +15,92 @@ from dpt.models import DPTSegmentationModel
 from dpt.transforms import Resize, NormalizeImage, PrepareForNet
 
 
+from torch.utils.data import Dataset, DataLoader
+
+
+class ledchangeDataset(Dataset):
+    
+   def __init__(self, root, transform=None):
+        self.root = root
+        self.transforms = transform
+        # load all image files, sorting them to
+        # ensure that they are aligned
+        self.imgs1 = list(sorted(os.listdir(os.path.join(root, "images"))))
+        
+        
+        self.masks = list(sorted(os.listdir(os.path.join(root, "annotations"))))
+   def __getitem__(self, idx):
+        # load images ad masks
+        
+        img_path1 = os.path.join(self.root, "A", self.imgs1[idx])
+        img_path2 = os.path.join(self.root, "B", self.imgs2[idx])
+        
+        mask_path = os.path.join(self.root, "OUT", self.masks[idx])
+        
+        img1 = Image.open(img_path1).convert("RGB")
+        img1= np.array(img1)
+    
+        
+        img2 = Image.open(img_path2).convert("RGB")
+        img2= np.array(img2)
+      
+        mask = Image.open(mask_path)
+        mask = np.array(mask)
+        mask=mask/255
+#         mask=mask.reshape(768,768,1)
+#         mask=mask.transpose(2,0,1)
+        
+        mask = torch.from_numpy(mask).long()
+
+        if self.transforms is not None:
+            img1 = self.transforms(img1)
+            img2 = self.transforms(img2)
+
+
+        return img1,img2,mask
+
+   def __len__(self):
+        return len(self.imgs1)  
+        
+        
+  
+# use the same transformations for train/val in this example
+trans = transforms.Compose([
+  transforms.ToTensor(),
+  transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]) # imagenet
+])
+
+train_set = ledchangeDataset(pre_url+'train/', transform = trans)
+val_set = ledchangeDataset(pre_url+'test/', transform = trans)
+
+image_datasets = {
+  'train': train_set, 'val': val_set
+}
+
+batch_size = 16
+
+dataloaders = {
+  'train': DataLoader(train_set, batch_size=batch_size, shuffle=True),
+  'val': DataLoader(val_set, batch_size=batch_size, shuffle=True)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def run(input_path, output_path, model_path, model_type="dpt_hybrid", optimize=True):
     """Run segmentation network
 
