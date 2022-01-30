@@ -207,7 +207,7 @@ def run(input_path, output_path, model_path, model_type="dpt_hybrid", optimize=T
 
         # output
         filename = os.path.join(
-            output_path, os.path.splitext(os.path.basename(img_name))[0]
+            output_path, os.path.splitext(os.path.basename(img_name))[0]+".png"
         )
         
         mask=Image.open(filename)
