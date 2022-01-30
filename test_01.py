@@ -93,11 +93,20 @@ dataloaders = {
 
 
 
+def mIoU(pred_mask, mask, smooth=1e-10, n_classes=151):
+    with torch.no_grad():
+        pred_mask = pred_mask.contiguous().view(-1)
+        mask = mask.contiguous().view(-1)
 
-
-
-
-
+        iou_per_class = []
+        for clas in range(0, n_classes): #loop per pixel class
+            true_class = pred_mask == clas
+            true_label = mask == clas
+            intersect = torch.logical_and(true_class, true_label).sum().float().item()
+            union = torch.logical_or(true_class, true_label).sum().float().item()
+            iou_per_class.append([intersect,union])
+        return iou_per_class     
+#         return np.nanmean(iou_per_class)
 
 
 
@@ -168,6 +177,10 @@ def run(input_path, output_path, model_path, model_type="dpt_hybrid", optimize=T
 
     print("start processing")
 
+    iou_score=[[0.0,0.0] for d in range(151)]
+    iou_score = np.array(iou_score)
+    
+    
     for ind, img_name in enumerate(img_names):
 
         print("  processing {} ({}/{})".format(img_name, ind + 1, num_images))
@@ -189,14 +202,30 @@ def run(input_path, output_path, model_path, model_type="dpt_hybrid", optimize=T
                 out, size=img.shape[:2], mode="bicubic", align_corners=False
             )
             prediction = torch.argmax(prediction, dim=1) + 1
-            prediction = prediction.squeeze().cpu().numpy()
+            prediction = prediction.squeeze().cpu()
+#             .numpy()
 
         # output
         filename = os.path.join(
             output_path, os.path.splitext(os.path.basename(img_name))[0]
         )
-        util.io.write_segm_img(filename, img, prediction, alpha=0.5)
+        
+        mask=Image.open(filename)
+        mask= np.array(mask)
+        ss=mIoU(prediction, mask)
+        mid=np.array(ss )
+        iou_score +=ss
+#         util.io.write_segm_img(filename, img, prediction, alpha=0.5)
 
+
+    iou_score_final=[0 for d in range(150)]
+    smooth=0
+    for i in range(150): 
+                intersect,union=iou_score[i+1]
+                iou = (intersect + smooth) / (union +smooth)
+                iou_score_final[i]=iou
+    miou =  np.nanmean(iou_score_final)
+    print(miou)
     print("finished")
 
 
