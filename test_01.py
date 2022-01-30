@@ -212,6 +212,8 @@ def run(input_path, output_path, model_path, model_type="dpt_hybrid", optimize=T
         
         mask=Image.open(filename)
         mask= np.array(mask)
+        mask = torch.from_numpy(mask)
+        
         ss=mIoU(prediction, mask)
         mid=np.array(ss )
         iou_score +=ss
