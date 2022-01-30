@@ -13,7 +13,7 @@ import util.io
 from torchvision.transforms import Compose
 from dpt.models import DPTSegmentationModel
 from dpt.transforms import Resize, NormalizeImage, PrepareForNet
-
+from PIL import Image
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
 
